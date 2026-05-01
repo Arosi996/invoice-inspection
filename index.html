@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendor Invoice Inspection — Team Arosi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F4F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EFE9;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1A1A18;
+    --text2: #6B6B66;
+    --text3: #9B9B94;
+    --accent: #1A4FBB;
+    --accent-bg: #EEF3FF;
+    --green: #1A7A4A;
+    --green-bg: #EDFAF3;
+    --red: #C02B2B;
+    --red-bg: #FFF0F0;
+    --amber: #925C00;
+    --amber-bg: #FFF8EC;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow);
+  }
+  .login-logo { text-align: center; margin-bottom: 1.5rem; }
+  .login-logo .logo-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; background: var(--accent); border-radius: 12px; margin-bottom: 12px;
+  }
+  .login-logo .logo-mark svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .login-logo h1 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .login-logo p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  .role-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 1.25rem; background: var(--surface2); border-radius: 8px; padding: 4px; }
+  .role-tab { padding: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; border: none; border-radius: 6px; background: none; cursor: pointer; color: var(--text2); font-weight: 500; transition: all 0.15s; }
+  .role-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .form-group label { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: 0.03em; text-transform: uppercase; }
+  .form-group input { padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius); font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text); outline: none; transition: border 0.15s; }
+  .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,79,187,0.1); }
+
+  .error-msg { font-size: 12px; color: var(--red); min-height: 16px; text-align: center; margin-bottom: 4px; }
+  .btn-primary { width: 100%; padding: 10px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: var(--radius); background: var(--accent); color: #fff; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .app-shell { display: none; flex-direction: column; min-height: 100vh; }
+  .app-shell.visible { display: flex; }
+
+  .top-bar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+  }
+  .top-bar-left { display: flex; align-items: center; gap: 10px; }
+  .app-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .role-pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; letter-spacing: 0.03em; }
+  .role-pill.user { background: var(--green-bg); color: var(--green); }
+  .role-pill.admin { background: var(--accent-bg); color: var(--accent); }
+  .badge-pill { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .top-bar-right { display: flex; align-items: center; gap: 10px; }
+  .sync-badge { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 99px; display: none; }
+  .sync-badge.sending { display: inline-block; background: var(--accent-bg); color: var(--accent); }
+  .sync-badge.ok { display: inline-block; background: var(--green-bg); color: var(--green); }
+  .sync-badge.err { display: inline-block; background: var(--red-bg); color: var(--red); }
+  .btn-logout { font-size: 13px; padding: 6px 14px; border: 1px solid var(--border2); border-radius: 8px; background: none; font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .btn-logout:hover { background: var(--surface2); }
+
+  .nav-tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; }
+  .nav-tab { padding: 13px 18px; font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: none; border-bottom: 2px solid transparent; background: none; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-tab:hover:not(.active) { color: var(--text); }
+
+  .content { flex: 1; padding: 1.75rem 1.5rem; max-width: 860px; width: 100%; margin: 0 auto; }
+  .panel { display: none; flex-direction: column; gap: 1rem; }
+  .panel.active { display: flex; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
+  .card-title { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1rem; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: 0.03em; text-transform: uppercase; }
+  .field input[type="text"], .field select {
+    padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius);
+    font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--surface);
+    color: var(--text); outline: none; transition: border 0.15s; width: 100%;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,79,187,0.1); }
+  .field select:disabled { background: var(--surface2); color: var(--text3); }
+  .readonly-val { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; background: var(--surface2); color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  .pf-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .pf-options { display: flex; gap: 16px; }
+  .pf-option { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; user-select: none; }
+  .pf-option input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
+  .pf-option.passed { color: var(--green); }
+  .pf-option.failed { color: var(--red); }
+
+  .btn-enter { padding: 9px 24px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: var(--radius); background: var(--text); color: #fff; cursor: pointer; transition: opacity 0.15s; }
+  .btn-enter:hover { opacity: 0.82; }
+  .btn-enter:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .findings-wrap { display: none; flex-direction: column; gap: 10px; }
+  .findings-wrap.visible { display: flex; }
+  .finding-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .btn-remove { padding: 9px 11px; border: 1px solid var(--border2); border-radius: var(--radius); background: none; cursor: pointer; color: var(--text2); font-size: 13px; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .btn-remove:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+  .btn-add { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: 1px dashed var(--border2); border-radius: var(--radius); background: none; cursor: pointer; color: var(--text2); transition: all 0.15s; align-self: flex-start; }
+  .btn-add:hover { background: var(--surface2); color: var(--text); }
+  .btn-submit { padding: 10px 22px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: var(--radius); background: var(--accent); color: #fff; cursor: pointer; align-self: flex-start; transition: opacity 0.15s; }
+  .btn-submit:hover { opacity: 0.88; }
+  .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+  hr.sep { border: none; border-top: 1px solid var(--border); }
+
+  .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .metric-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .metric-value { font-size: 26px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .filter-grid select { padding: 8px 10px; border: 1px solid var(--border2); border-radius: var(--radius); font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text); outline: none; }
+  .filter-grid select:focus { border-color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text2); background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  .tag { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .tag-passed { background: var(--green-bg); color: var(--green); }
+  .tag-missing { background: var(--amber-bg); color: var(--amber); }
+  .tag-wrong { background: var(--red-bg); color: var(--red); }
+  .tag-synced { background: var(--green-bg); color: var(--green); }
+  .tag-local { background: var(--amber-bg); color: var(--amber); }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
+
+  /* Admin */
+  .add-country-card { background: var(--surface); border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 12px; }
+  .add-country-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .admin-editor { display: flex; flex-direction: column; gap: 8px; }
+  .country-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .country-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 1.25rem; cursor: pointer; user-select: none; }
+  .country-header:hover { background: var(--surface2); }
+  .country-name-wrap { display: flex; align-items: center; gap: 10px; }
+  .country-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .region-tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .chevron { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .country-body { border-top: 1px solid var(--border); padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
+  .country-body.collapsed { display: none; }
+  .item-edit-row { display: flex; gap: 8px; align-items: center; }
+  .item-edit-row input { flex: 1; padding: 7px 10px; border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text); outline: none; }
+  .item-edit-row input:focus { border-color: var(--accent); }
+  .add-item-row { display: flex; gap: 8px; margin-top: 4px; }
+  .add-item-row input { flex: 1; padding: 7px 10px; border: 1px dashed var(--border2); border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--surface2); color: var(--text); outline: none; }
+  .add-item-row input:focus { border: 1px solid var(--accent); background: var(--surface); }
+  .btn-save-sm { padding: 6px 14px; font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: 8px; background: var(--text); color: #fff; cursor: pointer; white-space: nowrap; }
+  .btn-save-sm:hover { opacity: 0.8; }
+  .btn-save-country { margin-top: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; align-self: flex-start; }
+  .btn-save-country:hover { opacity: 0.88; }
+  .btn-delete-country { padding: 5px 12px; font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: 1px solid #F09595; border-radius: 8px; background: var(--red-bg); color: var(--red); cursor: pointer; }
+  .btn-delete-country:hover { background: #F7C1C1; }
+  .section-label { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 99px; font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 9999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: 1fr 1fr 1fr; }
+    .filter-grid { grid-template-columns: 1fr 1fr; }
+    .add-country-row { grid-template-columns: 1fr; }
+    .content { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h1>Invoice Inspection</h1>
+      <p>Team Arosi — Quality Control</p>
+    </div>
+    <div class="role-tabs">
+      <button class="role-tab active" id="btn-user" onclick="selectRole('user')">User</button>
+      <button class="role-tab" id="btn-admin" onclick="selectRole('admin')">Admin</button>
+    </div>
+    <div id="badge-wrap">
+      <div class="form-group">
+        <label>Badge #</label>
+        <input type="text" id="badge-input" placeholder="Enter your badge number" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+    </div>
+    <div id="pw-wrap" style="display:none;">
+      <div class="form-group">
+        <label>Admin password</label>
+        <input type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+    </div>
+    <div class="error-msg" id="login-error"></div>
+    <button class="btn-primary" onclick="doLogin()">Enter</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-shell" id="app-shell">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="app-title">Invoice Inspection</span>
+      <span class="role-pill" id="role-pill"></span>
+      <span class="badge-pill" id="badge-pill"></span>
+    </div>
+    <div class="top-bar-right">
+      <span class="sync-badge" id="sync-badge"></span>
+      <button class="btn-logout" onclick="doLogout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('inspection')">New inspection</button>
+    <button class="nav-tab" onclick="switchTab('summary')">Summary dashboard</button>
+    <button class="nav-tab" id="admin-tab-btn" style="display:none;" onclick="switchTab('admin')">Admin — country items</button>
+  </div>
+
+  <div class="content">
+
+    <!-- INSPECTION -->
+    <div class="panel active" id="panel-inspection">
+      <div class="card">
+        <div class="card-title">Inspector info</div>
+        <div class="field-row">
+          <div class="field"><label>Inspector badge</label><div class="readonly-val" id="inspector-display"></div></div>
+          <div class="field"><label>Inspection date</label><div class="readonly-val" id="date-display"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Invoice details</div>
+        <div class="field-row" style="margin-bottom:12px;">
+          <div class="field">
+            <label>Region</label>
+            <select id="region-sel" onchange="populateCountries()">
+              <option value="">— select region —</option>
+              <option>North America</option>
+              <option>EMEA</option>
+              <option>APJC</option>
+              <option>Latin America</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <select id="country-sel" onchange="populateItems()" disabled>
+              <option value="">— select country —</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Vendor ID#</label><input type="text" id="vendor" placeholder="Vendor ID number" /></div>
+          <div class="field"><label>Invoice number</label><input type="text" id="invoice-no" placeholder="e.g. INV-2024-0042" /></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Inspection result</div>
+        <div class="pf-row">
+          <div class="pf-options">
+            <label class="pf-option passed"><input type="checkbox" id="chk-passed" onchange="onCheckChange('passed')" /> Passed</label>
+            <label class="pf-option failed"><input type="checkbox" id="chk-fail" onchange="onCheckChange('fail')" /> Fail</label>
+          </div>
+          <button class="btn-enter" id="enter-btn" onclick="handleEnter()">Enter</button>
+        </div>
+        <div class="findings-wrap" id="findings-wrap">
+          <hr class="sep" style="margin-top:1rem;" />
+          <div class="card-title" style="margin-top:0.5rem;margin-bottom:0.5rem;">Findings</div>
+          <div id="findings-list"></div>
+          <button class="btn-add" onclick="addFinding()">+ add finding</button>
+          <hr class="sep" />
+          <button class="btn-submit" id="submit-btn" onclick="submitInspection()">Submit inspection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="panel" id="panel-summary">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="m-total">0</div></div>
+        <div class="metric"><div class="metric-label">Passed</div><div class="metric-value" id="m-passed" style="color:var(--green);">0</div></div>
+        <div class="metric"><div class="metric-label">Failed</div><div class="metric-value" id="m-failed" style="color:var(--red);">0</div></div>
+        <div class="metric"><div class="metric-label">Missing</div><div class="metric-value" id="m-missing" style="color:var(--amber);">0</div></div>
+        <div class="metric"><div class="metric-label">Wrong</div><div class="metric-value" id="m-wrong" style="color:var(--red);">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Filters</div>
+        <div class="filter-grid" style="margin-bottom:8px;">
+          <select id="f-region" onchange="renderTable()"><option value="">All regions</option></select>
+          <select id="f-country" onchange="renderTable()"><option value="">All countries</option></select>
+          <select id="f-vendor" onchange="renderTable()"><option value="">All vendors</option></select>
+        </div>
+        <div class="filter-grid">
+          <select id="f-item" onchange="renderTable()"><option value="">All items</option></select>
+          <select id="f-status" onchange="renderTable()">
+            <option value="">All statuses</option>
+            <option>Passed</option><option>Missing</option><option>Wrong</option>
+          </select>
+          <select id="f-badge" onchange="renderTable()"><option value="">All badges</option></select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Region</th><th>Country</th><th>Vendor ID#</th><th>Invoice</th><th>Badge</th><th>Item</th><th>Status</th><th>Synced</th></tr></thead>
+          <tbody id="summary-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">No inspections submitted yet.</div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="panel" id="panel-admin">
+      <div class="add-country-card">
+        <div class="section-label">Add new country</div>
+        <div class="add-country-row">
+          <div class="field">
+            <label>Country name</label>
+            <input type="text" id="new-country-name" placeholder="e.g. Italy" onkeydown="if(event.key==='Enter')addCountry()" />
+          </div>
+          <div class="field">
+            <label>Region</label>
+            <select id="new-country-region">
+              <option value="">— select region —</option>
+              <option>North America</option>
+              <option>EMEA</option>
+              <option>APJC</option>
+              <option>Latin America</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn-save-country" onclick="addCountry()">Add country</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text2);">After adding, expand the country below to add its inspection items.</div>
+      </div>
+      <div class="section-label" style="margin-top:4px;">Edit existing countries</div>
+      <div class="admin-editor" id="admin-editor"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_PASSWORD = 'APISGREAT';
+const POWER_AUTOMATE_URL = 'https://default945c199a83a24e809f8c5a91be5752.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/fedc5a96dad84a26bc13e48bb251c592/triggers/manual/paths/invoke?api-version=1';
+
+let currentRole = 'user';
+let currentBadge = '';
+let records = [];
+
+let countryData = {
+  "North America": {
+    "USA": ["Tax ID number","VAT exemption certificate","Purchase order reference","Vendor EIN","FEIN on invoice","Authorized signature","W-9 form reference","Currency (USD)"],
+    "Canada": ["GST/HST number","Business number","Province of supply","QST number (Quebec)","Currency (CAD)","Authorized signature"],
+    "Mexico": ["RFC (tax ID)","CFDI digital seal","UUID folio fiscal","IVA breakdown","CURP reference","Currency (MXN)"]
+  },
+  "EMEA": {
+    "Germany": ["VAT ID (USt-IdNr)","IBAN / bank details","Steuer-Nr","Invoice date","Tax point date","Net & gross amounts","Reverse charge note","Currency (EUR)"],
+    "France": ["SIRET number","TVA intracommunautaire","Mention légale","Currency (EUR)","Authorized signature","Intrastat code"],
+    "Spain": ["NIF/CIF number","IVA rate & amount","Factura number","Currency (EUR)","Authorized signature","RECC regime note"],
+    "UK": ["VAT registration number","Company registration no.","PAYE reference","Currency (GBP)","Authorized signature","Reverse charge (if applicable)"],
+    "UAE": ["TRN (Tax Registration No.)","VAT 5% line","Currency (AED)","Trade license number","Authorized signature","VAT invoice label"],
+    "Saudi Arabia": ["VAT registration no.","ZATCA QR code","CR number","Currency (SAR)","Authorized signature","Invoice date (Hijri & Gregorian)"],
+    "South Africa": ["VAT registration no.","Tax invoice label","SARS reference","Currency (ZAR)","Authorized signature","B-BBEE level"]
+  },
+  "APJC": {
+    "Japan": ["Invoice number (請求書番号)","Consumption tax (消費税)","Registration number (登録番号)","Bank account details","Currency (JPY)","Authorized stamp (印鑑)"],
+    "Australia": ["ABN","GST amount","Tax invoice label","Currency (AUD)","Authorized signature","PAYG reference"],
+    "China": ["Fapiao (发票) code","Fapiao number","Unified social credit code","Currency (CNY)","Seal (公章)","VAT rate"]
+  },
+  "Latin America": {
+    "Brazil": ["CNPJ number","NF-e key","CFOP code","ICMS / ISS / PIS / COFINS","Currency (BRL)","Authorized signature"],
+    "Colombia": ["NIT number","CUFE code","DIAN authorization","IVA breakdown","Currency (COP)","Authorized signature"],
+    "Chile": ["RUT number","DTE folio","SII authorization","IVA (19%) breakdown","Currency (CLP)","Authorized signature"]
+  }
+};
+
+function safeKey(str) { return str.replace(/[\s()&\/\-]/g, '_'); }
+
+async function sendToSharePoint(payload) {
+  try {
+    const res = await fetch(POWER_AUTOMATE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    return res.ok || res.status === 202;
+  } catch(e) { return false; }
+}
+
+function setSyncBadge(state, msg) {
+  const el = document.getElementById('sync-badge');
+  el.className = 'sync-badge ' + state;
+  el.textContent = msg;
+  if (state === 'ok') setTimeout(() => { el.className = 'sync-badge'; }, 3500);
+}
+
+function selectRole(role) {
+  currentRole = role;
+  document.getElementById('btn-user').classList.toggle('active', role === 'user');
+  document.getElementById('btn-admin').classList.toggle('active', role === 'admin');
+  document.getElementById('pw-wrap').style.display = role === 'admin' ? 'block' : 'none';
+  document.getElementById('badge-wrap').style.display = role === 'user' ? 'block' : 'none';
+  document.getElementById('login-error').textContent = '';
+}
+
+function doLogin() {
+  document.getElementById('login-error').textContent = '';
+  if (currentRole === 'admin') {
+    if (document.getElementById('pw-input').value !== ADMIN_PASSWORD) {
+      document.getElementById('login-error').textContent = 'Incorrect password. Please try again.'; return;
+    }
+    currentBadge = 'Admin';
+  } else {
+    const badge = document.getElementById('badge-input').value.trim();
+    if (!badge) { document.getElementById('login-error').textContent = 'Please enter your badge number.'; return; }
+    currentBadge = badge;
+  }
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('app-shell').classList.add('visible');
+  const rp = document.getElementById('role-pill');
+  rp.textContent = currentRole === 'admin' ? 'Admin' : 'User';
+  rp.className = 'role-pill ' + currentRole;
+  document.getElementById('badge-pill').textContent = currentRole === 'user' ? `Badge: ${currentBadge}` : '';
+  document.getElementById('inspector-display').textContent = currentBadge;
+  document.getElementById('date-display').textContent = getTodayString();
+  document.getElementById('admin-tab-btn').style.display = currentRole === 'admin' ? 'inline-block' : 'none';
+  if (currentRole === 'admin') buildAdminEditor();
+}
+
+function doLogout() {
+  currentRole = 'user'; currentBadge = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('badge-input').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('btn-user').classList.add('active');
+  document.getElementById('btn-admin').classList.remove('active');
+  document.getElementById('pw-wrap').style.display = 'none';
+  document.getElementById('badge-wrap').style.display = 'block';
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('app-shell').classList.remove('visible');
+  document.getElementById('sync-badge').className = 'sync-badge';
+  switchTab('inspection');
+}
+
+function getTodayString() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${t}')"]`).classList.add('active');
+  document.getElementById(`panel-${t}`).classList.add('active');
+  if (t === 'summary') { buildFilters(); renderTable(); }
+}
+
+function onCheckChange(which) {
+  if (which === 'passed') document.getElementById('chk-fail').checked = false;
+  else document.getElementById('chk-passed').checked = false;
+  const fail = document.getElementById('chk-fail').checked;
+  const wrap = document.getElementById('findings-wrap');
+  if (fail) { wrap.classList.add('visible'); if (!document.getElementById('findings-list').children.length) addFinding(); }
+  else wrap.classList.remove('visible');
+}
+
+async function handleEnter() {
+  const passed = document.getElementById('chk-passed').checked;
+  const fail = document.getElementById('chk-fail').checked;
+  if (!passed && !fail) { showToast('Please select Passed or Fail.'); return; }
+  const region = document.getElementById('region-sel').value;
+  const country = document.getElementById('country-sel').value;
+  const vendor = document.getElementById('vendor').value.trim();
+  const invoiceNo = document.getElementById('invoice-no').value.trim();
+  if (!region || !country || !vendor) { showToast('Please fill in region, country and vendor ID.'); return; }
+  if (passed) {
+    const payload = { date: getTodayString(), badge: currentBadge, region, country, vendor, invoice: invoiceNo, item: '—', status: 'Passed' };
+    document.getElementById('enter-btn').disabled = true;
+    setSyncBadge('sending', '⟳ Saving...');
+    const ok = await sendToSharePoint(payload);
+    document.getElementById('enter-btn').disabled = false;
+    records.push({ ...payload, inspector: currentBadge, invoiceNo, synced: ok });
+    ok ? (setSyncBadge('ok', '✓ Saved to SharePoint'), showToast('Passed — saved to SharePoint!'))
+       : (setSyncBadge('err', '✕ Sync failed'), showToast('Saved locally (sync failed).'));
+    resetForNext();
+  }
+}
+
+function resetForNext() {
+  document.getElementById('vendor').value = '';
+  document.getElementById('invoice-no').value = '';
+  document.getElementById('chk-passed').checked = false;
+  document.getElementById('chk-fail').checked = false;
+  document.getElementById('findings-wrap').classList.remove('visible');
+  document.getElementById('findings-list').innerHTML = '';
+}
+
+function populateCountries() {
+  const region = document.getElementById('region-sel').value;
+  const csel = document.getElementById('country-sel');
+  csel.innerHTML = '<option value="">— select country —</option>';
+  csel.disabled = !region;
+  if (region && countryData[region]) Object.keys(countryData[region]).sort().forEach(c => { csel.innerHTML += `<option>${c}</option>`; });
+  document.getElementById('findings-list').innerHTML = '';
+}
+
+function populateItems() { document.getElementById('findings-list').innerHTML = ''; }
+
+function getItems() {
+  const r = document.getElementById('region-sel').value;
+  const c = document.getElementById('country-sel').value;
+  return (r && c && countryData[r] && countryData[r][c]) ? countryData[r][c] : [];
+}
+
+function addFinding() {
+  const items = getItems();
+  const list = document.getElementById('findings-list');
+  const opts = items.map(i => `<option>${i}</option>`).join('');
+  const div = document.createElement('div');
+  div.className = 'finding-row';
+  div.style.marginBottom = '8px';
+  div.innerHTML = `
+    <div class="field"><label>Item to verify</label>
+      <select class="item-sel" style="padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;width:100%;">
+        ${opts.length ? '<option value="">— select item —</option>'+opts : '<option value="">— select country first —</option>'}
+      </select></div>
+    <div class="field"><label>Status</label>
+      <select class="status-sel" style="padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;width:100%;">
+        <option value="">— select —</option><option>Missing</option><option>Wrong</option>
+      </select></div>
+    <div class="field"><label>&nbsp;</label><button class="btn-remove" onclick="this.closest('.finding-row').remove()">✕</button></div>`;
+  list.appendChild(div);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+async function submitInspection() {
+  const date = getTodayString();
+  const region = document.getElementById('region-sel').value;
+  const country = document.getElementById('country-sel').value;
+  const vendor = document.getElementById('vendor').value.trim();
+  const invoiceNo = document.getElementById('invoice-no').value.trim();
+  if (!region || !country || !vendor) { showToast('Please fill in region, country and vendor ID.'); return; }
+  const rows = document.querySelectorAll('#findings-list .finding-row');
+  const findings = [];
+  rows.forEach(row => {
+    const item = row.querySelector('.item-sel').value;
+    const status = row.querySelector('.status-sel').value;
+    if (item && status) findings.push({ item, status });
+  });
+  if (!findings.length) { showToast('Add at least one valid finding.'); return; }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  setSyncBadge('sending', '⟳ Saving...');
+  let allOk = true;
+  for (const f of findings) {
+    const payload = { date, badge: currentBadge, region, country, vendor, invoice: invoiceNo, item: f.item, status: f.status };
+    const ok = await sendToSharePoint(payload);
+    records.push({ date, region, country, vendor, invoiceNo, inspector: currentBadge, item: f.item, status: f.status, synced: ok });
+    if (!ok) allOk = false;
+  }
+  btn.disabled = false; btn.textContent = 'Submit inspection';
+  allOk ? (setSyncBadge('ok', '✓ Saved to SharePoint'), showToast(`${findings.length} finding(s) saved to SharePoint!`))
+        : (setSyncBadge('err', '✕ Some failed'), showToast('Some records saved locally only.'));
+  resetForNext();
+}
+
+function buildFilters() {
+  const regions = [...new Set(records.map(r => r.region))];
+  const countries = [...new Set(records.map(r => r.country))];
+  const vendors = [...new Set(records.map(r => r.vendor))];
+  const items = [...new Set(records.map(r => r.item).filter(i => i !== '—'))];
+  const badges = [...new Set(records.map(r => r.inspector).filter(Boolean))];
+  function rebuild(id, vals, label) {
+    const el = document.getElementById(id); const cur = el.value;
+    el.innerHTML = `<option value="">All ${label}</option>` + vals.map(v => `<option ${v===cur?'selected':''}>${v}</option>`).join('');
+  }
+  rebuild('f-region', regions, 'regions'); rebuild('f-country', countries, 'countries');
+  rebuild('f-vendor', vendors, 'vendors'); rebuild('f-item', items, 'items'); rebuild('f-badge', badges, 'badges');
+}
+
+function renderTable() {
+  const fr = document.getElementById('f-region').value, fc = document.getElementById('f-country').value;
+  const fv = document.getElementById('f-vendor').value, fi = document.getElementById('f-item').value;
+  const fs = document.getElementById('f-status').value, fb = document.getElementById('f-badge').value;
+  const filtered = records.filter(r =>
+    (!fr||r.region===fr)&&(!fc||r.country===fc)&&(!fv||r.vendor===fv)&&
+    (!fi||r.item===fi)&&(!fs||r.status===fs)&&(!fb||r.inspector===fb));
+  document.getElementById('summary-tbody').innerHTML = filtered.map(r => `<tr>
+    <td class="mono">${r.date}</td><td>${r.region}</td><td>${r.country}</td>
+    <td class="mono">${r.vendor}</td><td class="mono">${r.invoiceNo||'—'}</td>
+    <td class="mono">${r.inspector||'—'}</td><td>${r.item}</td>
+    <td><span class="tag tag-${r.status.toLowerCase()}">${r.status}</span></td>
+    <td><span class="tag ${r.synced?'tag-synced':'tag-local'}">${r.synced?'Synced':'Local only'}</span></td>
+  </tr>`).join('');
+  document.getElementById('empty-state').style.display = filtered.length===0 ? 'block' : 'none';
+  document.getElementById('m-total').textContent = [...new Set(records.map(r=>r.date+r.vendor+r.invoiceNo))].length;
+  document.getElementById('m-passed').textContent = records.filter(r=>r.status==='Passed').length;
+  document.getElementById('m-failed').textContent = [...new Set(records.filter(r=>r.status==='Missing'||r.status==='Wrong').map(r=>r.date+r.vendor+r.invoiceNo))].length;
+  document.getElementById('m-missing').textContent = records.filter(r=>r.status==='Missing').length;
+  document.getElementById('m-wrong').textContent = records.filter(r=>r.status==='Wrong').length;
+}
+
+function addCountry() {
+  const name = document.getElementById('new-country-name').value.trim();
+  const region = document.getElementById('new-country-region').value;
+  if (!name) { showToast('Please enter a country name.'); return; }
+  if (!region) { showToast('Please select a region.'); return; }
+  if (countryData[region] && countryData[region][name]) { showToast(`${name} already exists in ${region}.`); return; }
+  if (!countryData[region]) countryData[region] = {};
+  countryData[region][name] = [];
+  document.getElementById('new-country-name').value = '';
+  document.getElementById('new-country-region').value = '';
+  showToast(`${name} added to ${region}. Expand it below to add inspection items.`);
+  buildAdminEditor();
+  setTimeout(() => {
+    const key = safeKey(name);
+    const body = document.getElementById(`body-${key}`);
+    const chev = document.getElementById(`chev-${key}`);
+    if (body) { body.classList.remove('collapsed'); if (chev) chev.classList.add('open'); }
+  }, 80);
+}
+
+function buildAdminEditor() {
+  const editor = document.getElementById('admin-editor');
+  editor.innerHTML = '';
+  const all = [];
+  Object.entries(countryData).forEach(([region, countries]) => {
+    Object.entries(countries).forEach(([country, items]) => all.push({ region, country, items }));
+  });
+  all.sort((a, b) => a.country.localeCompare(b.country));
+  if (!all.length) { editor.innerHTML = '<div class="empty-state">No countries yet. Add one above.</div>'; return; }
+  all.forEach(({ region, country, items }) => {
+    const key = safeKey(country);
+    const block = document.createElement('div');
+    block.className = 'country-block';
+    block.innerHTML = `
+      <div class="country-header" onclick="toggleBlock('${key}')">
+        <div class="country-name-wrap">
+          <span class="country-name">${country}</span>
+          <span class="region-tag">${region}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn-delete-country" onclick="event.stopPropagation();deleteCountry('${region}','${country}')">Remove</button>
+          <span class="chevron" id="chev-${key}">▼</span>
+        </div>
+      </div>
+      <div class="country-body collapsed" id="body-${key}">
+        <div class="item-list" id="items-${key}">
+          ${items.length ? items.map((item, idx) => `
+            <div class="item-edit-row">
+              <input type="text" value="${item}" />
+              <button class="btn-remove" onclick="removeItem('${region}','${country}',${idx})">✕</button>
+            </div>`).join('')
+          : '<div style="font-size:13px;color:var(--text2);padding:4px 0;">No items yet — add one below.</div>'}
+        </div>
+        <div class="add-item-row">
+          <input type="text" placeholder="Add new item..." id="new-item-${key}" onkeydown="if(event.key==='Enter')addItem('${region}','${country}')" />
+          <button class="btn-save-sm" onclick="addItem('${region}','${country}')">Add</button>
+        </div>
+        <button class="btn-save-country" onclick="saveCountry('${region}','${country}')">Save changes</button>
+      </div>`;
+    editor.appendChild(block);
+  });
+}
+
+function toggleBlock(key) {
+  const body = document.getElementById(`body-${key}`);
+  const chev = document.getElementById(`chev-${key}`);
+  if (body) body.classList.toggle('collapsed');
+  if (chev) chev.classList.toggle('open');
+}
+
+function expandBlock(key) {
+  const body = document.getElementById(`body-${key}`);
+  const chev = document.getElementById(`chev-${key}`);
+  if (body) body.classList.remove('collapsed');
+  if (chev) chev.classList.add('open');
+}
+
+function saveCountry(region, country) {
+  const key = safeKey(country);
+  const inputs = document.querySelectorAll(`#items-${key} input[type="text"]`);
+  countryData[region][country] = [...inputs].map(i => i.value.trim()).filter(Boolean);
+  showToast(`${country} saved.`);
+  buildAdminEditor();
+  setTimeout(() => expandBlock(key), 50);
+}
+
+function removeItem(region, country, idx) {
+  const key = safeKey(country);
+  countryData[region][country].splice(idx, 1);
+  buildAdminEditor();
+  setTimeout(() => expandBlock(key), 50);
+}
+
+function addItem(region, country) {
+  const key = safeKey(country);
+  const input = document.getElementById(`new-item-${key}`);
+  const val = input ? input.value.trim() : '';
+  if (!val) return;
+  countryData[region][country].push(val);
+  showToast(`Item added to ${country}.`);
+  buildAdminEditor();
+  setTimeout(() => expandBlock(key), 50);
+}
+
+function deleteCountry(region, country) {
+  if (!confirm(`Remove ${country} from ${region}? This cannot be undone.`)) return;
+  delete countryData[region][country];
+  showToast(`${country} removed.`);
+  buildAdminEditor();
+}
+</script>
+</body>
+</html>
