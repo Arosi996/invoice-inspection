@@ -393,7 +393,7 @@
 
 <script>
 const ADMIN_PASSWORD = 'APISGREAT';
-const POWER_AUTOMATE_URL = 'https://d9c7406827cae0cba48fb14abf80aa.13.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/05721c8b74f54cb4bd8cff7185bf6797/triggers/manual/paths/invoke?api-version=1';
+const POWER_AUTOMATE_URL = 'https://d9c7406827cae0cba48fb14abf80aa.13.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/05721c8b74f54cb4bd8cff7185bf6797/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ng10BCK5178D-fcRH2zCS0rXVBsT-Qtv0Im34HbcypU';
 
 let currentRole = 'user';
 let currentBadge = '';
@@ -430,9 +430,19 @@ function safeKey(str) { return str.replace(/[\s()&\/\-]/g, '_'); }
 
 async function sendToSharePoint(payload) {
   try {
-    const res = await fetch(POWER_AUTOMATE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    return res.ok || res.status === 202;
-  } catch(e) { return false; }
+    const res = await fetch(POWER_AUTOMATE_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    // no-cors always returns opaque response, treat as success
+    // Real success is verified in Power Automate run history
+    return true;
+  } catch(e) {
+    console.error('Fetch error:', e);
+    return false;
+  }
 }
 
 function setSyncBadge(state, msg) {
